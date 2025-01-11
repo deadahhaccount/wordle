@@ -150,7 +150,7 @@
         }
         let words;
             function loadText(){
-                const promise=fetch('jsons/5-letter-words.json').then((response)=>{
+                const promise=fetch('https://raw.githubusercontent.com/deadahhaccount/wordle/refs/heads/main/5-letter-words.json').then((response)=>{
                     return response.json();
                 }).then((text)=>{
                     words=text;

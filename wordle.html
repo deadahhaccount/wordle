@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle</title>
+    <link rel="icon" href="https://static01.nyt.com/images/2022/09/22/crosswords/wordle-icon-nl/wordle-icon-nl-popup.png" type="image/x-icon">
+    <style>
+        body{
+            background-color: #2c2c2c;
+            font-family: 'Arial';
+            font-size:30px;
+            font-weight: bold;
+        }
+        div{
+            display:inline-block;
+        }
+        .board{
+            display: grid;
+            place-items: center;
+            margin:0;
+            position: absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+        }
+        [class^="row"]{
+            display:block;
+        }
+        [class^="tile"]{
+            background-color: #ededed; /*#fff022 yellow*/ /*#41ff0d green*/
+            height: 75px;
+            width: 75px;
+            margin:7px;
+            margin-left:2px;
+            margin-right:2px;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 75px;
+        }
+        .gray{
+            background-color: #4a4a4a;
+            color:white
+        }
+        .green{
+            background-color:#00a61c;
+            color:white;
+        }
+        .yellow{
+            background-color: #dbc204;
+            color:white;
+        }
+        .endscreen{
+            display:grid;
+            place-items:center;
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+            width:25%;
+            height:50%;
+            background-color: none;
+            z-index:-1;
+            transition: background-color 1.5s;
+            text-align: center;
+        }
+        .win-condition, .guess-amount, .retry{
+            z-index:-100;
+            opacity: 0;
+            transition: opacity 1.5s;
+        }
+        .retry{
+            border:none;
+            cursor:pointer;
+            padding:15px;
+            height:100px;
+            width:200px;
+            background-color: #2c2c2c;
+            color:white;
+            font-size:30px;
+            font-weight: bold;
+        }
+        .guess-info{
+            color:white;
+            position: absolute;
+            top:100%;
+            left:50%;
+            transform: translate(-50%,-250%);
+            font-size:40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="endscreen">
+        <p class="win-condition"></p>
+        <p class="guess-amount">Amount of guesses: </p>
+        <button class="retry" onclick="location.reload();">Retry</button>
+    </div>
+    <div class="board">
+        <div class="row-1">
+            <div class="tile-11"></div>
+            <div class="tile-12"></div>
+            <div class="tile-13"></div>
+            <div class="tile-14"></div>
+            <div class="tile-15"></div>
+        </div>
+        <div class="row-2">
+            <div class="tile-21"></div>
+            <div class="tile-22"></div>
+            <div class="tile-23"></div>
+            <div class="tile-24"></div>
+            <div class="tile-25"></div>
+        </div>
+        <div class="row-3">
+            <div class="tile-31"></div>
+            <div class="tile-32"></div>
+            <div class="tile-33"></div>
+            <div class="tile-34"></div>
+            <div class="tile-35"></div>
+        </div>
+        <div class="row-4">
+            <div class="tile-41"></div>
+            <div class="tile-42"></div>
+            <div class="tile-43"></div>
+            <div class="tile-44"></div>
+            <div class="tile-45"></div>
+        </div>
+        <div class="row-5">
+            <div class="tile-51"></div>
+            <div class="tile-52"></div>
+            <div class="tile-53"></div>
+            <div class="tile-54"></div>
+            <div class="tile-55"></div>
+        </div>
+        <div class="row-6">
+            <div class="tile-61"></div>
+            <div class="tile-62"></div>
+            <div class="tile-63"></div>
+            <div class="tile-64"></div>
+            <div class="tile-65"></div>
+        </div>
+    </div>
+    <p class="guess-info">Press enter to guess</p>
+    <script>
+        let amountOfGuesses=1;
+        let guessedStr='';
+        let ansStr='';
+        function isLetter(key){
+                return Boolean(key.length === 1 && key.match(/[a-z]/i));
+        }
+        let words;
+            function loadText(){
+                const promise=fetch('jsons/5-letter-words.json').then((response)=>{
+                    return response.json();
+                }).then((text)=>{
+                    words=text;
+                });
+                return promise;
+            }
+        async function loadGame(){
+            try{
+                await loadText();
+            }catch (error){
+                document.querySelector('.board').innerHTML='Text could not be loaded. Try again.';
+            }
+            let ansStr=words[Math.round(Math.random()*(words.length-1))].toUpperCase();
+            window.addEventListener('keydown',(e)=>{
+            let keyPressed;
+            if(isLetter(e.key)){
+                keyPressed=e.key.toUpperCase();
+            }
+            if(e.key==='Enter'){
+                if(guessedStr.length===5){
+                    if(words.includes(guessedStr.toLowerCase())){
+                    const ansObj={};
+                    const guessObj={};
+                    for(let i=0;i<ansStr.length;i++){
+                        if(ansObj[ansStr[i]]){
+                            ansObj[ansStr[i]]++;
+                        }else{
+                            ansObj[ansStr[i]]=1;
+                        }
+
+                        if(guessObj[guessedStr[i]]){
+                            guessObj[guessedStr[i]]++;
+                        }else{
+                            guessObj[guessedStr[i]]=1;
+                        }
+                    }
+                    for(let i=1;i<=5;i++){
+                        if(ansStr[i-1]===guessedStr[i-1]){
+                            document.querySelector(`.tile-${amountOfGuesses}${i}`).classList.add('green');
+                            ansObj[ansStr[i-1]]--;
+                            guessObj[guessedStr[i-1]]--;
+                        }
+                        if(ansObj[ansStr[i-1]]===0){
+                            delete ansObj[ansStr[i-1]];
+                        }
+                        if(guessObj[guessedStr[i-1]]===0){
+                            delete guessObj[guessedStr[i-1]];
+                        }
+                    }
+                    const guessObjKeys=Object.keys(guessObj);
+                    const ansObjKeys=Object.keys(ansObj);
+                    for(let i=0;i<guessObjKeys.length;i++){
+                        if(ansObjKeys.includes(guessObjKeys[i])){
+                            let min=Math.min(ansObj[guessObjKeys[i]],guessObj[guessObjKeys[i]]);
+                            ansObj[guessObjKeys[i]]-=min;
+                            guessObj[guessObjKeys[i]]-=min;
+                            if(ansObj[guessObjKeys[i]]===0){
+                                delete ansObj[guessObjKeys[i]];
+                            }
+                            if(guessObj[guessObjKeys[i]]===0){
+                                delete guessObj[guessObjKeys[i]];
+                            }
+                            let j = 1;
+                            while (min > 0) {
+                                const tile = document.querySelector(`.tile-${amountOfGuesses}${j}`);
+                                if (
+                                    tile.innerHTML == guessObjKeys[i] &&
+                                    !tile.classList.contains('green') &&
+                                    !tile.classList.contains('yellow')
+                                ) {
+                                    tile.classList.add('yellow');
+                                    min--;
+                                }
+                                j++;
+                            }
+                            for(let l=1;l<=5;l++){
+                                const tile = document.querySelector(`.tile-${amountOfGuesses}${l}`);
+                                if (!tile.classList.contains('yellow') && !tile.classList.contains('green')) {
+                                    tile.classList.add('gray');
+                                }
+                            }
+                        }else{
+                            for(let k=1;k<=5; k++){
+                                const tile=document.querySelector(`.tile-${amountOfGuesses}${k}`)
+                                if(tile.innerHTML==guessObjKeys[i]&&!tile.classList.contains('yellow') && !tile.classList.contains('green')){
+                                    document.querySelector(`.tile-${amountOfGuesses}${k}`).classList.add('gray');
+                                }
+                            }
+                        }
+                    }
+                    amountOfGuesses++;
+                    if(guessedStr===ansStr){
+                        document.querySelector('.win-condition').innerHTML='You Win!';
+                        document.querySelector('.guess-amount').innerHTML='Amount of guesses: '+(amountOfGuesses-1);
+                    }else if(amountOfGuesses>6){
+                        document.querySelector('.win-condition').innerHTML='You Lose!';
+                        document.querySelector('.guess-amount').innerHTML=`The correct word is: ${ansStr}`;
+                    }
+                    if(guessedStr===ansStr||amountOfGuesses>6){
+                        document.querySelector('.endscreen').style.backgroundColor='#ffffff';
+                        document.querySelector('.endscreen').style.zIndex=100;
+                        document.querySelector('.win-condition').style.zIndex=100;
+                        document.querySelector('.retry').style.zIndex=100;
+                        document.querySelector('.win-condition').style.opacity=1;
+                        document.querySelector('.retry').style.opacity=1;
+                        document.querySelector('.guess-amount').style.zIndex=100;
+                        document.querySelector('.guess-amount').style.opacity=1;
+                        return;
+                    }
+                    guessedStr='';
+                }
+                }
+            }
+            if(e.key==='Backspace'){
+                if(guessedStr.length>0){
+                    guessedStr=guessedStr.substring(0, guessedStr.length-1);
+                    document.querySelector(`.tile-${amountOfGuesses}${guessedStr.length+1}`).innerHTML='';
+                }
+            }
+
+            if(!keyPressed){
+                return;
+            }
+            const endscreen = document.querySelector('.endscreen');
+            if((guessedStr.length<5)&&(window.getComputedStyle(endscreen).zIndex=='-1')){
+                guessedStr+=keyPressed;
+                document.querySelector(`.tile-${amountOfGuesses}${guessedStr.length}`).innerHTML=keyPressed;
+            }
+        });
+    }
+    loadGame();
+    </script>
+</body>
+</html>
